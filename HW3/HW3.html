@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">    
+        <title>Tips in 2023</title>
+        <script src= "https://d3js.org/d3.v7.min.js"></script>
+        <style type="text/css">
+            .bar {
+                fill: green;
+            }
+            .axis text {
+                font-size: 10px;
+            }
+        </style>
+    </head>
+    <body>
+    
+    <script type="text/javascript">
+
+        const width = 600; 
+        const height = 400; 
+        const margin = 50;
+    
+        const svg = d3.select("body")
+            .append("svg")
+            .attr("width", width)
+            .attr("height", height);
+    
+        // Load data
+        d3.csv("tips_2023.csv").then(data => {
+            console.log("Data loaded:", data);
+    
+             // Calculate avg tip
+             data.forEach(d => {
+                d.averageTip = (+d["Highest tip"] + +d["Lowest tip"]) /2;
+            });
+    
+            const xScale = d3.scaleBand()
+                .domain(data.map(d => d["Month of the year"]))
+                .range([margin, width - margin])
+                .padding(0.1);
+            const yScale = d3.scaleLinear()
+                .domain([0, d3.max(data, d => d.averageTip)]) //Updated to use average tip
+                .range([height - margin, margin]);
+            const xAxis = d3.axisBottom(xScale);
+            const yAxis = d3.axisLeft(yScale);
+    
+            // Axis
+            svg.append("g")
+                .attr("class", "axis")
+                .attr("transform", "translate(0," + (height - margin) + ")")
+                .call(xAxis)
+                .selectAll("text")
+                    .style("text-anchor", "end")
+                    .attr("transform", "rotate(-45)");
+
+            svg.append("g")
+                .attr("class", "axis")
+                .attr("transform", "translate(" + margin + ",0)")
+                .call(yAxis);
+    
+            // Bars
+            svg.selectAll(".bar")
+                .data(data)
+                .enter()
+                .append("rect")
+                .attr("class", "bar")
+                .attr("x", d => xScale(d["Month of the year"]))
+                .attr("y", d => yScale(d.averageTip))
+                .attr("width", xScale.bandwidth())
+                .attr("height", d => height - margin - yScale(d.averageTip));
+
+            // Axis labels
+            svg.append("text")
+                .attr("x", width / 2)
+                .attr("y", height - margin + 50)
+                .attr("text-anchor", "middle")
+                .text("Month");
+
+            svg.append("text")
+                .attr("transform", "rotate(-90)")
+                .attr("y", margin / 2)
+                .attr("x", -height / 2)
+                .attr("text-anchor", "middle")
+                .text("Average Tip Amount ($)");
+
+            // Title
+            svg.append("text")
+                .attr("x", width / 2)
+                .attr("y", margin / 2)
+                .attr("font-size", "18px")
+                .attr("text-anchor", "middle")
+                .text("Average Tip Amount received in 2023");
+              });
+
+    </script>
+    
+</body>
+</html>

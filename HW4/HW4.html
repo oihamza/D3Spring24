@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tips in 2023</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style type="text/css">
+        .line-average {
+            fill: none;
+            stroke: gray;
+            stroke-width: 2px;
+            stroke-linejoin: round;
+            stroke-dasharray: 5, 5;
+            stroke-linecap: round;
+        }
+        .line-highest {
+            fill: none;
+            stroke: green;
+            stroke-width: 2px;
+            stroke-linejoin: round;
+            stroke-linecap: round;
+        }
+        .line-lowest {
+            fill: none;
+            stroke: red;
+            stroke-width: 2px;
+            stroke-linejoin: round;
+            stroke-linecap: round;
+        }
+        .axis text {
+            font-size: 10px;
+        }
+        .axis line, .axis path {
+            stroke: black;
+        }
+        .label {
+            fill: #555;
+            font-size: 12px;
+        }
+        text.title {
+            font-size: 18px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <script type="text/javascript">
+        const width = 600;
+        const height = 400;
+        const margin = 50;
+
+        const svg = d3.select("body")
+            .append("svg")
+            .attr("width", width)
+            .attr("height", height);
+
+        d3.csv("tips_2023.csv").then(data => {
+            data.forEach(d => {
+                d.averageTip = (+d["Highest tip"] + +d["Lowest tip"]) / 2;
+            });
+
+            const parseTime = d3.timeParse("%B");
+            data.forEach(d => {
+                d["Month of the year"] = parseTime(d["Month of the year"]);
+            });
+
+            const xScale = d3.scaleTime()
+                .domain(d3.extent(data, d => d["Month of the year"]))
+                .range([margin, width - margin]);
+
+            const yScale = d3.scaleLinear()
+                .domain([0, d3.max(data, d => Math.max(d["Highest tip"], d["Lowest tip"], d.averageTip))])
+                .range([height - margin, margin]);
+
+            const line = d3.line()
+                .x(d => xScale(d["Month of the year"]))
+                .y(d => yScale(d.averageTip))
+                .curve(d3.curveMonotoneX);
+
+            const lineHighest = d3.line()
+                .x(d => xScale(d["Month of the year"]))
+                .y(d => yScale(+d["Highest tip"]))
+                .curve(d3.curveMonotoneX);
+
+            const lineLowest = d3.line()
+                .x(d => xScale(d["Month of the year"]))
+                .y(d => yScale(+d["Lowest tip"]))
+                .curve(d3.curveMonotoneX);
+
+            const xAxis = d3.axisBottom(xScale)
+                .tickFormat(d3.timeFormat("%B"))
+                .tickPadding(10); 
+
+            const yAxis = d3.axisLeft(yScale);
+
+            svg.append("g")
+                .attr("class", "axis")
+                .attr("transform", `translate(0,${height - margin})`)
+                .call(xAxis)
+                .selectAll("text")
+                .attr("transform", "rotate(-45)") 
+                .style("text-anchor", "end"); 
+
+            svg.append("g")
+                .attr("class", "axis")
+                .attr("transform", `translate(${margin},0)`)
+                .call(yAxis)
+                .append("text")
+                .attr("transform", "rotate(-90)")
+                .attr("y", -40)
+                .attr("x", -height / 2)
+                .attr("fill", "#000")
+                .style("text-anchor", "middle")
+                .text("Tip Amount ($)");
+
+            svg.append("path")
+                .datum(data)
+                .attr("class", "line-average")
+                .attr("d", line);
+
+            svg.append("path")
+                .datum(data)
+                .attr("class", "line-highest")
+                .attr("d", lineHighest);
+
+            svg.append("path")
+                .datum(data)
+                .attr("class", "line-lowest")
+                .attr("d", lineLowest);
+
+            svg.append("text")
+                .attr("transform", `translate(${width - 10},${yScale(data[data.length - 1].averageTip)})`)
+                // .attr("dy", ".35em")
+                .attr("dy", "-0.5em") 
+                .attr("dx", "0.9em") 
+
+                .attr("text-anchor", "end")
+                .attr("class", "label")
+                .text("Average Tip");
+
+            svg.append("text")
+                .attr("transform", `translate(${width - 10},${yScale(data[data.length - 1]["Highest tip"])})`)
+                // .attr("dy", ".35em")
+                .attr("dy", "-0.5em") 
+                .attr("dx", "-0.5em") 
+                .attr("text-anchor", "end")
+                .attr("class", "label")
+                .text("Highest Tip");
+
+            svg.append("text")
+                .attr("transform", `translate(${width - 10},${yScale(data[data.length - 1]["Lowest tip"])})`)
+                // .attr("dy", ".35em")
+                .attr("dy", "-0.5em") 
+                .attr("text-anchor", "end")
+                .attr("class", "label")
+                .text("Lowest Tip");
+
+            svg.append("text")
+                .attr("class", "title")
+                .attr("x", width / 2)
+                .attr("y", margin / 2)
+                .attr("text-anchor", "middle")
+                .text("Tips in 2023");
+        });
+    </script>
+</body>
+</html>

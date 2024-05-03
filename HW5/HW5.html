@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">    
+    <title>Interactive 202 Tips</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style type="text/css">
+        .bar { cursor: pointer; }
+        .tooltip {
+            position: absolute;
+            text-align: center;
+            width: 45px;
+            height: 25px;
+            /* padding: 2px; */
+            font: 14px sans-serif;
+            background: white;
+            /* border-radius: 8px; */
+            pointer-events: none;
+            opacity: 0;
+        }
+    </style>
+</head>
+<body>
+
+<div class="tooltip"></div>
+<script type="text/javascript">
+
+   d3.select("body")
+          .append("p")
+          .text("Average tip amount received in 2023. Hover to learn more!")
+          .style("color", "black");
+
+   d3.csv("tips_2023.csv").then(function(data) {
+        data.forEach(function(d) {
+            d.averageTip = (parseInt(d['Highest tip']) + parseInt(d['Lowest tip'])) / 2;
+        });
+
+        const width = 920, height = 150;
+        const svg = d3.select("body").append("svg")
+            .attr("width", width)
+            .attr("height", height);
+        
+        const tooltip = d3.select(".tooltip");
+
+        const colorScale = d3.scaleLinear()
+            .domain([0, d3.max(data, d => d.averageTip)])
+            .range(["lightgreen", "darkgreen"]);
+
+        svg.selectAll("rect")
+            .data(data)
+            .enter().append("rect")
+            .attr("x", (d, i) => i * (width / data.length))
+            .attr("y", 0)
+            .attr("width", width / data.length)
+            .attr("height", height)
+            .attr("fill", d => colorScale(d.averageTip))
+            .on("mouseover", function(event, d) {
+                d3.select(this).attr("fill", "gray");
+                tooltip.style("opacity", 1);
+                tooltip.html("$" + d.averageTip.toFixed(2))
+                    .style("left", (event.pageX + 5) + "px")
+                    .style("top", (event.pageY - 28) + "px");
+            })
+            .on("mouseout", function(d) {
+                d3.select(this).attr("fill", d => colorScale(d.averageTip));
+                tooltip.style("opacity", 0);
+            });
+    });
+
+</script>
+</body>
+</html>
